@@ -1,29 +1,18 @@
+from django.shortcuts import get_object_or_404
+from reviews.models import Comment, Category, Genre, Review, Title
+from rest_framework import viewsets
+from .permissions import IsAuthorAdminModeratorOrReadOnly
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .serializers import (
     CustomTokenObtainPairSerializer,
-)
-
-from django.shortcuts import get_object_or_404
-from reviews.models import Comment, Review, Title
-
-from rest_framework import viewsets
-from .permissions import IsAuthorAdminModeratorOrReadOnly
-from .serializers import (
     CommentSerializer,
-    ReviewSerializer)
-from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt.views import TokenObtainPairView
-
-
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    """Обработка выдачи токенов."""
-    permission_classes = [AllowAny]
-    serializer_class = CustomTokenObtainPairSerializer
-
-
+    ReviewSerializer,
+    GenreSerializer,
+    CategorySerializer,
+    TitleSerializer,
+)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
