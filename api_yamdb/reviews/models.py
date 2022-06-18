@@ -22,6 +22,14 @@ class User(AbstractUser):
         'Роль', max_length=50, choices=ROLES, default='user'
     )
 
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
+
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'
+
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
@@ -47,7 +55,7 @@ class Category(models.Model):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
         ordering = ['name']
-    
+
     def __str__(self):
         return self.name
 
@@ -67,7 +75,7 @@ class Genre(models.Model):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
         ordering = ['name']
-    
+
     def __str__(self):
         return self.name
 
@@ -98,6 +106,7 @@ class Title(models.Model):
         related_name='titles',
         null=True
     )
+
     rating = models.IntegerField(
         verbose_name='Рейтинг',
         null=True,

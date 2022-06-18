@@ -1,24 +1,124 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404
-from reviews.models import Comment, Category, Genre, Review, Title
-from rest_framework import viewsets
-from .permissions import IsAuthorAdminModeratorOrReadOnly
-from rest_framework.permissions import AllowAny
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from reviews.models import Category, Genre, Review, Title, User
+from .permissions import (
+    IsAuthorAdminModeratorOrReadOnly,
+    IsAdministratorRole,
+)
 from .serializers import (
     CustomTokenObtainPairSerializer,
     CommentSerializer,
+    RegisterSerializer,
     ReviewSerializer,
-    GenreSerializer,
+    UserRoleSerializer,
+    UserSerializer,
     CategorySerializer,
+    GenreSerializer,
     TitleSerializer,
+    ReadOnlyTitleSerializer,
 )
+
+from django.db.models import Avg
+from .mixins import ListCreateDestroyViewSet
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import TitlesFilter
+
+User = get_user_model()
+
+
+# class CategoryViewSet(ListCreateDestroyViewSet):
+#     queryset = Category.objects.all()
+#     serializer_class = CategorySerializer
+#     permission_classes = (IsAdministratorRole,)
+#     filter_backends = (filters.SearchFilter,)
+#     search_fields = ("name",)
+#     lookup_field = "slug"
+
+
+# class GenreViewSet(ListCreateDestroyViewSet):
+#     queryset = Genre.objects.all()
+#     serializer_class = GenreSerializer
+#     permission_classes = (IsAdministratorRole,)
+#     filter_backends = (filters.SearchFilter,)
+#     search_fields = ("name",)
+#     lookup_field = "slug"
+
+
+# class TitleViewSet(viewsets.ModelViewSet):
+#     queryset = Title.objects.all().annotate(
+#         Avg("reviews__score")
+#     ).order_by("name")
+#     serializer_class = TitleSerializer
+#     permission_classes = (IsAdministratorRole,)
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_class = TitlesFilter
+
+#     def get_serializer_class(self):
+#         if self.action in ("retrieve", "list"):
+#             return ReadOnlyTitleSerializer
+#         return TitleSerializer
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Обработка выдачи токенов."""
     permission_classes = [AllowAny]
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class UsersViewSet(viewsets.ModelViewSet):
+    lookup_field = 'username'
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('=username',)
+    permission_classes = (IsAdministratorRole,)
+
+    @action(
+        detail=False, methods=['PATCH', 'GET'], url_path='me',
+        permission_classes=[IsAuthenticated]
+    )
+    def me_user(self, request, pk=None):
+        """Обработка эндпоинта users/me"""
+        user = User.objects.get(username=request.user)
+        serializer = UserRoleSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RegisterUserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = (AllowAny,)
+
+    def send_confirmation_code(self, email, token):
+        subject = 'Confirmation code'
+        message = f'Confirmation code: {token}'
+        from_email = settings.MAIL_FROM
+        send_mail(subject, message, from_email, [email, ])
+
+    def perform_create(self, serializer):
+        email = serializer.validated_data.get('email')
+        # создаем пользователя без пароля
+        user, created = User.objects.get_or_create(email=email)
+        # создаем confirmation_code, он же - пароль для пользователя
+        confirmation_code = default_token_generator.make_token(user)
+        # устанавливаем хэш-пароль для пользователя
+        user.set_password(confirmation_code)
+        # сохраняем пароль пользователя
+        user.save()
+        # отправляем confirmation_code на почту пользователя
+        self.send_confirmation_code(email, confirmation_code)
 
 
 def get_review(self):

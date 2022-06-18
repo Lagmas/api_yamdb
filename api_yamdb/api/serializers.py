@@ -6,6 +6,15 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
+class UserRoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'role', 'bio', 'first_name', 'last_name'
+        ]
+        read_only_fields = ['role']
+
+
 class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
 
@@ -54,6 +63,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+class RegisterSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+
+    class Meta:
+        model = User
+        fields = ('email',)
+
+
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -88,6 +105,18 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
+class ReadOnlyTitleSerializer(serializers.ModelSerializer):
+    rating = serializers.IntegerField(
+        source='reviews__score__avg', read_only=True
+    )
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор модели Review.
