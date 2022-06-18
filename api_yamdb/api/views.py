@@ -13,6 +13,7 @@ from reviews.models import Category, Genre, Review, Title, User, Comment
 from .permissions import (
     IsAuthorAdminModeratorOrReadOnly,
     IsAdministratorRole,
+    IsAdminOrReadOnly
 )
 from .serializers import (
     CustomTokenObtainPairSerializer,
@@ -38,7 +39,7 @@ User = get_user_model()
 class CategoryViewSet(ListCreateDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdministratorRole,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ("name",)
     lookup_field = "slug"
@@ -47,7 +48,7 @@ class CategoryViewSet(ListCreateDestroyViewSet):
 class GenreViewSet(ListCreateDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdministratorRole,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ("name",)
     lookup_field = "slug"
@@ -58,7 +59,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         Avg("reviews__score")
     ).order_by("name")
     serializer_class = TitleSerializer
-    permission_classes = (IsAdministratorRole,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitlesFilter
 
@@ -110,9 +111,11 @@ class RegisterUserViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         email = serializer.validated_data.get('email')
         # создаем пользователя без пароля
-        user, created = User.objects.get_or_create(email=email)
+        user, create = User.objects.get_or_create(
+            username=serializer.data['username'], email=email)
         # создаем confirmation_code, он же - пароль для пользователя
         confirmation_code = default_token_generator.make_token(user)
+        user.confirmation_code = confirmation_code
         # устанавливаем хэш-пароль для пользователя
         user.set_password(confirmation_code)
         # сохраняем пароль пользователя
