@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from reviews.models import Category, Genre, Review, Title, User
+from reviews.models import Category, Genre, Review, Title, User, Comment
 from .permissions import (
     IsAuthorAdminModeratorOrReadOnly,
     IsAdministratorRole,
@@ -35,37 +35,37 @@ from .filters import TitlesFilter
 User = get_user_model()
 
 
-# class CategoryViewSet(ListCreateDestroyViewSet):
-#     queryset = Category.objects.all()
-#     serializer_class = CategorySerializer
-#     permission_classes = (IsAdministratorRole,)
-#     filter_backends = (filters.SearchFilter,)
-#     search_fields = ("name",)
-#     lookup_field = "slug"
+class CategoryViewSet(ListCreateDestroyViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdministratorRole,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name",)
+    lookup_field = "slug"
 
 
-# class GenreViewSet(ListCreateDestroyViewSet):
-#     queryset = Genre.objects.all()
-#     serializer_class = GenreSerializer
-#     permission_classes = (IsAdministratorRole,)
-#     filter_backends = (filters.SearchFilter,)
-#     search_fields = ("name",)
-#     lookup_field = "slug"
+class GenreViewSet(ListCreateDestroyViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdministratorRole,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name",)
+    lookup_field = "slug"
 
 
-# class TitleViewSet(viewsets.ModelViewSet):
-#     queryset = Title.objects.all().annotate(
-#         Avg("reviews__score")
-#     ).order_by("name")
-#     serializer_class = TitleSerializer
-#     permission_classes = (IsAdministratorRole,)
-#     filter_backends = [DjangoFilterBackend]
-#     filterset_class = TitlesFilter
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all().annotate(
+        Avg("reviews__score")
+    ).order_by("name")
+    serializer_class = TitleSerializer
+    permission_classes = (IsAdministratorRole,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TitlesFilter
 
-#     def get_serializer_class(self):
-#         if self.action in ("retrieve", "list"):
-#             return ReadOnlyTitleSerializer
-#         return TitleSerializer
+    def get_serializer_class(self):
+        if self.action in ("retrieve", "list"):
+            return ReadOnlyTitleSerializer
+        return TitleSerializer
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
