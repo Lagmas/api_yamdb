@@ -1,7 +1,7 @@
+import uuid
+
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
@@ -9,21 +9,62 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from reviews.models import Comment, Review, Title
+from reviews.models import Category, Genre, Review, Title, User, Comment
 from .permissions import (
     IsAuthorAdminModeratorOrReadOnly,
     IsAdministratorRole,
+    IsAdminOrReadOnly
 )
 from .serializers import (
     CustomTokenObtainPairSerializer,
     CommentSerializer,
-    RegisterSerializer,
+    CredentialsSerializer,
     ReviewSerializer,
     UserRoleSerializer,
     UserSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+    ReadOnlyTitleSerializer,
 )
 
-User = get_user_model()
+from django.db.models import Avg
+from .mixins import ListCreateDestroyViewSet
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import TitlesFilter
+
+
+class CategoryViewSet(ListCreateDestroyViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name",)
+    lookup_field = "slug"
+
+
+class GenreViewSet(ListCreateDestroyViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name",)
+    lookup_field = "slug"
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all().annotate(
+        Avg("reviews__score")
+    ).order_by("name")
+    serializer_class = TitleSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TitlesFilter
+
+    def get_serializer_class(self):
+        if self.action in ("retrieve", "list"):
+            return ReadOnlyTitleSerializer
+        return TitleSerializer
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -55,28 +96,34 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 class RegisterUserViewSet(viewsets.ModelViewSet):
+    """Обработка принимает на вход параметры POST запросом:
+    email и username, генерирует verification_code,
+    создает пользователя и отправляет
+    код по указанной в параметре почте.
+    """
     queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-    permission_classes = (AllowAny,)
+    serializer_class = CredentialsSerializer
+    permission_classes = ()
+    authentication_classes = ()
 
-    def send_confirmation_code(self, email, token):
-        subject = 'Confirmation code'
-        message = f'Confirmation code: {token}'
-        from_email = settings.MAIL_FROM
-        send_mail(subject, message, from_email, [email, ])
+    def create(self, request):
+        serializer = CredentialsSerializer(data=request.data)
+        if serializer.is_valid():
+            # Код подтверждения
+            confirmation_code = uuid.uuid4()
+            serializer.save(confirmation_code=confirmation_code)
 
-    def perform_create(self, serializer):
-        email = serializer.validated_data.get('email')
-        # создаем пользователя без пароля
-        user, created = User.objects.get_or_create(email=email)
-        # создаем confirmation_code, он же - пароль для пользователя
-        confirmation_code = default_token_generator.make_token(user)
-        # устанавливаем хэш-пароль для пользователя
-        user.set_password(confirmation_code)
-        # сохраняем пароль пользователя
-        user.save()
-        # отправляем confirmation_code на почту пользователя
-        self.send_confirmation_code(email, confirmation_code)
+            # Отправка письма
+            mail_text = f'Код подтверждения {confirmation_code}'
+            mail_theme = 'Код подтверждения'
+            mail_from = settings.MAIL_FROM
+            mail_to = serializer.data['email']
+            send_mail(
+                mail_theme, mail_text, mail_from, [mail_to],
+                fail_silently=False
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_review(self):

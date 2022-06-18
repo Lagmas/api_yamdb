@@ -3,6 +3,9 @@ from rest_framework import routers
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from api.views import (
+    CategoryViewSet,
+    GenreViewSet,
+    TitleViewSet,
     CustomTokenObtainPairView,
     CommentViewSet,
     ReviewViewSet,
@@ -21,6 +24,9 @@ router.register(
 router.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentViewSet, basename='comments')
+router.register(r'categories', CategoryViewSet)
+router.register(r'genres', GenreViewSet)
+router.register(r'titles', TitleViewSet)
 
 auth_endpoints = [
     path(
