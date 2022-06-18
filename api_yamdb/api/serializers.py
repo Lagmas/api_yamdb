@@ -33,6 +33,31 @@ class UserSerializer(serializers.ModelSerializer):
         return email
 
 
+class CredentialsSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+        extra_kwargs = {'password': {'required': False}}
+
+    def validate_email(self, value):
+        email = value.lower()
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует.'
+            )
+        return email
+
+    def validate_username(self, value):
+        username_me = value.lower()
+        if 'me' == username_me:
+            raise serializers.ValidationError(
+                f'Создание Пользователя c username "{username_me}" запрещено'
+            )
+        return value
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def __init__(self, *args, **kwargs):
@@ -105,6 +130,7 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
+
 class ReadOnlyTitleSerializer(serializers.ModelSerializer):
     rating = serializers.IntegerField(
         source='reviews__score__avg', read_only=True
@@ -117,6 +143,7 @@ class ReadOnlyTitleSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор модели Review.

@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -18,6 +20,7 @@ from .permissions import (
 from .serializers import (
     CustomTokenObtainPairSerializer,
     CommentSerializer,
+    CredentialsSerializer,
     RegisterSerializer,
     ReviewSerializer,
     UserRoleSerializer,
@@ -98,30 +101,34 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 class RegisterUserViewSet(viewsets.ModelViewSet):
+    """Обработка принимает на вход параметры POST запросом:
+    email и username, генерирует verification_code,
+    создает пользователя и отправляет
+    код по указанной в параметре почте.
+    """
     queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-    permission_classes = (AllowAny,)
+    serializer_class = CredentialsSerializer
+    permission_classes = ()
+    authentication_classes = ()
 
-    def send_confirmation_code(self, email, token):
-        subject = 'Confirmation code'
-        message = f'Confirmation code: {token}'
-        from_email = settings.MAIL_FROM
-        send_mail(subject, message, from_email, [email, ])
+    def create(self, request):
+        serializer = CredentialsSerializer(data=request.data)
+        if serializer.is_valid():
+            # Код подтверждения
+            confirmation_code = uuid.uuid4()
+            serializer.save(confirmation_code=confirmation_code)
 
-    def perform_create(self, serializer):
-        email = serializer.validated_data.get('email')
-        # создаем пользователя без пароля
-        user, create = User.objects.get_or_create(
-            username=serializer.data['username'], email=email)
-        # создаем confirmation_code, он же - пароль для пользователя
-        confirmation_code = default_token_generator.make_token(user)
-        user.confirmation_code = confirmation_code
-        # устанавливаем хэш-пароль для пользователя
-        user.set_password(confirmation_code)
-        # сохраняем пароль пользователя
-        user.save()
-        # отправляем confirmation_code на почту пользователя
-        self.send_confirmation_code(email, confirmation_code)
+            # Отправка письма
+            mail_text = f'Код подтверждения {confirmation_code}'
+            mail_theme = 'Код подтверждения'
+            mail_from = settings.MAIL_FROM
+            mail_to = serializer.data['email']
+            send_mail(
+                mail_theme, mail_text, mail_from, [mail_to],
+                fail_silently=False
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_review(self):
