@@ -149,3 +149,4 @@ dmypy.json
 media/
 api_yamdb/static/
 static/.api_yamdb/static
+.api_yamdb/static
