@@ -50,7 +50,9 @@ class CredentialsSerializer(serializers.ModelSerializer):
         return email
 
     def validate_username(self, value):
+        print(value)
         username_me = value.lower()
+        print(value.lower())
         if 'me' == username_me:
             raise serializers.ValidationError(
                 f'Создание Пользователя c username "{username_me}" запрещено'

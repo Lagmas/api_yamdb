@@ -32,12 +32,19 @@ class IsAuthorAdminModeratorOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return (obj.author == request.user
-                or request.user.role == 'admin'
-                or request.user.role == 'moderator')
+                or request.user.is_admin
+                or request.user.is_moderator)
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
+    """Позволяет предоставлять разные уровни доступа.
+    Разным пользователям в зависимости от их свойств, позволяются
+    различные действия над объектами.
+    IsAdminOrReadOnly разрешает создавать, удалять, изменять
+    объект только пользователю с ролью admin, остальным доступно
+    только чтение.
+    """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return request.user.is_authenticated and request.user.role == 'admin'
+        return request.user.is_authenticated and request.user.is_admin
