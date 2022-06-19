@@ -50,7 +50,9 @@ class CredentialsSerializer(serializers.ModelSerializer):
         return email
 
     def validate_username(self, value):
+        print(value)
         username_me = value.lower()
+        print(value.lower())
         if 'me' == username_me:
             raise serializers.ValidationError(
                 f'Создание Пользователя c username "{username_me}" запрещено'
@@ -61,12 +63,9 @@ class CredentialsSerializer(serializers.ModelSerializer):
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def __init__(self, *args, **kwargs):
-        # наследуемся от класса-родителя
         super().__init__(*args, **kwargs)
-        # Определяем новое поле
         self.fields['confirmation_code'] = serializers.CharField(required=True)
 
-        # Удаляем поля по умолчанию от аутентификации django
         del self.fields['password']
 
     def validate(self, attrs):
@@ -74,13 +73,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         """
         username = attrs.get('username')
         confirmation_code = attrs.get('confirmation_code')
-
-        # Если пользователя нет и код не корректный
         user = get_object_or_404(User, username=username)
         if user.confirmation_code != confirmation_code:
             raise ValidationError(detail='Код не корректный')
-
-        # Отправка токена
         data = {}
         refresh = self.get_token(user)
         data['refresh'] = str(refresh)
@@ -92,7 +87,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
 
     class Meta:
-        model = User        
+        model = User
         fields = ('email', 'username')
 
 
