@@ -2,7 +2,7 @@ from rest_framework import permissions
 
 
 class IsAdministratorRole(permissions.BasePermission):
-    # Настройка прав доступа на уровне всего запроса
+    """Настройка прав доступа на уровне всего запроса"""
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
@@ -21,13 +21,11 @@ class IsAuthorAdminModeratorOrReadOnly(permissions.BasePermission):
     - author - создателю объекта разрешено удаление и редактирование
     созданного объекта.
     """
-    # Определяет права на уровне запроса и пользователя
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
         return request.user.is_authenticated
 
-    # Определяет права на уровне объекта
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True

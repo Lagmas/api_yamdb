@@ -2,9 +2,10 @@ import uuid
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,6 +13,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from reviews.models import Category, Genre, Review, Title, User, Comment
+from .mixins import ListCreateDestroyViewSet
+from .filters import TitlesFilter
 from .permissions import (
     IsAuthorAdminModeratorOrReadOnly,
     IsAdministratorRole,
@@ -21,7 +24,6 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     CommentSerializer,
     CredentialsSerializer,
-    RegisterSerializer,
     ReviewSerializer,
     UserRoleSerializer,
     UserSerializer,
@@ -31,10 +33,6 @@ from .serializers import (
     ReadOnlyTitleSerializer,
 )
 
-from django.db.models import Avg
-from .mixins import ListCreateDestroyViewSet
-from django_filters.rest_framework import DjangoFilterBackend
-from .filters import TitlesFilter
 
 User = get_user_model()
 
@@ -114,11 +112,8 @@ class RegisterUserViewSet(viewsets.ModelViewSet):
     def create(self, request):
         serializer = CredentialsSerializer(data=request.data)
         if serializer.is_valid():
-            # Код подтверждения
             confirmation_code = uuid.uuid4()
             serializer.save(confirmation_code=confirmation_code)
-
-            # Отправка письма
             mail_text = f'Код подтверждения {confirmation_code}'
             mail_theme = 'Код подтверждения'
             mail_from = settings.MAIL_FROM
