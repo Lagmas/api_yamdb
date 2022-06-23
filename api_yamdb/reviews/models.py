@@ -9,11 +9,11 @@ class User(AbstractUser):
     USER_ROLE = 'user'
     MODERATOR_ROLE = 'moderator'
     ADMIN_ROLE = 'admin'
-    ROLES = [
+    ROLES = (
         (USER_ROLE, 'User'),
         (ADMIN_ROLE, 'Administrator'),
-        (MODERATOR_ROLE, 'Moderator')
-    ]
+        (MODERATOR_ROLE, 'Moderator'),
+    )
     bio = models.TextField('Биография', blank=True)
     confirmation_code = models.CharField(
         'Код подтверждения', blank=True, max_length=50
@@ -31,7 +31,7 @@ class User(AbstractUser):
         return self.role == 'moderator'
 
     class Meta:
-        ordering = ['id']
+        ordering = ('id',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         constraints = [
@@ -55,7 +55,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -75,7 +75,7 @@ class Genre(models.Model):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -120,7 +120,7 @@ class Title(models.Model):
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
-        ordering = ['name']
+        ordering = ('name',)
 
 
 class GenreTitle(models.Model):
@@ -176,7 +176,7 @@ class Review(models.Model):
                                     verbose_name='Опубликован')
 
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         verbose_name = "Отзыв"
         verbose_name_plural = "Отзывы"
 
@@ -216,7 +216,7 @@ class Comment(models.Model):
                                     verbose_name='Опубликован')
 
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         verbose_name = "Комментарий"
         verbose_name_plural = "Комментарии"
 

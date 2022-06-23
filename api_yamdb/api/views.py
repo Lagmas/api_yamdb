@@ -126,14 +126,6 @@ class RegisterUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-def get_review(self):
-    return get_object_or_404(Review, pk=self.kwargs.get('review_id'))
-
-
-def get_title(self):
-    return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-
-
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет ReviewViewSet.
     Во вьюсете переопределяем метод perform_create().
@@ -148,15 +140,17 @@ class ReviewViewSet(viewsets.ModelViewSet):
     - частичное обновление отзыва по id,
     - удаление отзыва по id.
     """
-    permission_classes = [IsAuthorAdminModeratorOrReadOnly]
+    permission_classes = (IsAuthorAdminModeratorOrReadOnly,)
     serializer_class = ReviewSerializer
 
+    def get_title(self):
+        return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+
     def get_queryset(self):
-        return Review.objects.filter(title=get_title(self).id)
+        return Review.objects.filter(title=self.get_title())
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user,
-                        title=get_title(self))
+        serializer.save(author=self.request.user, title=self.get_title())
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -174,14 +168,17 @@ class CommentViewSet(viewsets.ModelViewSet):
     - частичное обновление комментария к отзыву по id,
     - удаление комментария по id.
     """
-    permission_classes = [IsAuthorAdminModeratorOrReadOnly]
+    permission_classes = (IsAuthorAdminModeratorOrReadOnly,)
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
 
+    def get_review(self):
+        return get_object_or_404(Review,
+                                 pk=self.kwargs.get('review_id'),
+                                 title=self.kwargs.get('title_id'))
+
     def get_queryset(self):
-        print(get_review(self).id)
-        return Comment.objects.filter(review=get_review(self).id)
+        return Comment.objects.filter(review=self.get_review())
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user,
-                        review=Review.objects.get(id=get_review(self).id))
+        serializer.save(author=self.request.user, review=self.get_review())
