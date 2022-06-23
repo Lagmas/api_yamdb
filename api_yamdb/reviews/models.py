@@ -1,11 +1,44 @@
-from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from .validators import validate_year
 
 
-User = get_user_model()
+class User(AbstractUser):
+    USER_ROLE = 'user'
+    MODERATOR_ROLE = 'moderator'
+    ADMIN_ROLE = 'admin'
+    ROLES = (
+        (USER_ROLE, 'User'),
+        (ADMIN_ROLE, 'Administrator'),
+        (MODERATOR_ROLE, 'Moderator'),
+    )
+    bio = models.TextField('Биография', blank=True)
+    confirmation_code = models.CharField(
+        'Код подтверждения', blank=True, max_length=50
+    )
+    role = models.CharField(
+        'Роль', max_length=50, choices=ROLES, default='user'
+    )
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
+
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'
+
+    class Meta:
+        ordering = ('id',)
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['username', 'email'], name='unique_user_email'
+            )
+        ]
 
 
 class Category(models.Model):
@@ -22,7 +55,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -42,7 +75,7 @@ class Genre(models.Model):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -124,7 +157,6 @@ class Review(models.Model):
                               on_delete=models.CASCADE,
                               related_name='reviews',
                               verbose_name='Произведение',
-                              null=True,
                               help_text='Произведение, на которое'
                                         'оставлен отзыв')
     text = models.TextField(verbose_name='Текст',
@@ -132,7 +164,6 @@ class Review(models.Model):
     author = models.ForeignKey(User,
                                on_delete=models.CASCADE,
                                related_name='reviews',
-                               null=True,
                                verbose_name='Автор')
     score = models.PositiveSmallIntegerField(
         verbose_name='Оценка',
@@ -173,14 +204,12 @@ class Comment(models.Model):
     review = models.ForeignKey(Review,
                                on_delete=models.CASCADE,
                                related_name='comments',
-                               null=True,
                                verbose_name='Отзыв')
     text = models.TextField(verbose_name='Текст',
                             help_text='Введите текст комментария')
     author = models.ForeignKey(User,
                                on_delete=models.CASCADE,
                                related_name='comments',
-                               null=True,
                                verbose_name='Автор')
     pub_date = models.DateTimeField(auto_now_add=True,
                                     db_index=True,
@@ -192,4 +221,6 @@ class Comment(models.Model):
         verbose_name_plural = "Комментарии"
 
     def __str__(self):
-        return self.text
+        """Метод __str__ возвращает имя автора комментария
+        """
+        return self.author.username

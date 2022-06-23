@@ -6,10 +6,59 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
+class UserRoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'role', 'bio', 'first_name', 'last_name'
+        )
+        read_only_fields = ('role',)
+
+
+class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'role', 'bio', 'first_name', 'last_name'
+        )
+
+    def validate_email(self, value):
+        email = value.lower()
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует.'
+            )
+        return email
+
+
+class CredentialsSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email')
+        extra_kwargs = {'password': {'required': False}}
+
+    def validate_email(self, value):
+        email = value.lower()
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует.'
+            )
+        return email
+
+    def validate_username(self, value):
+        username_me = value.lower()
+        if 'me' == username_me:
+            raise serializers.ValidationError(
+                f'Создание Пользователя c username "{username_me}" запрещено'
+            )
+        return value
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Сериализатор для включения данных, которые
-    хотим отправить в ответ.
-    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -18,13 +67,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         del self.fields['password']
 
     def validate(self, attrs):
-        """Переопределяем валидатор под наши условия входных данных."""
+        """Переопределяем валидатор под наши условия входных данных.
+        """
         username = attrs.get('username')
         confirmation_code = attrs.get('confirmation_code')
         user = get_object_or_404(User, username=username)
         if user.confirmation_code != confirmation_code:
             raise ValidationError(detail='Код не корректный')
         data = {}
+        refresh = self.get_token(user)
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
         return data
 
 
