@@ -28,14 +28,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField()
-
-    class Meta:
-        model = User
-        fields = ('email', 'username')
-
-
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:

@@ -3,13 +3,11 @@ from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
-
-DEBUG = True
-
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = os.getenv('DEBUG')
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split()
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -123,3 +121,15 @@ SIMPLE_JWT = {
 }
 
 MAIL_FROM = 'from@example.com'
+
+CSV_DIR = os.path.join(BASE_DIR, 'static/data/')
+
+DICT_TABLE = {
+    'genre.csv': 'reviews_genre',
+    'category.csv': 'reviews_category',
+    'comments.csv': 'reviews_comment',
+    'genre_title.csv': 'reviews_genretitle',
+    'review.csv': 'reviews_review',
+    'titles.csv': 'reviews_title',
+    'users.csv': 'reviews_user'
+}

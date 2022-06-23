@@ -1,6 +1,3 @@
-import uuid
-
-from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
@@ -18,7 +15,6 @@ from .permissions import (
 from .serializers import (
     CustomTokenObtainPairSerializer,
     CommentSerializer,
-    CredentialsSerializer,
     ReviewSerializer,
     CategorySerializer,
     GenreSerializer,
@@ -51,7 +47,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     ).order_by('name')
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = TitlesFilter
 
     def get_serializer_class(self):
@@ -65,7 +61,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     пользователя и возвращает пару веб-токенов для подтверждения
     аутентификации этих учетных данных.
     """
-    permission_classes = [AllowAny]
+    permission_classes = (AllowAny,)
     serializer_class = CustomTokenObtainPairSerializer
 
 
