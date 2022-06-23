@@ -86,13 +86,13 @@ class Title(models.Model):
         verbose_name='Название',
         max_length=200
     )
-    year = models.IntegerField(
+    year = models.PositiveSmallIntegerField(
         verbose_name='Дата выхода',
         validators=[validate_year]
     )
     description = models.TextField(
         verbose_name='Описание',
-        null=True,
+        # null=True,
         blank=True
     )
     genre = models.ManyToManyField(
@@ -108,19 +108,19 @@ class Title(models.Model):
         null=True
     )
 
-    rating = models.IntegerField(
-        verbose_name='Рейтинг',
-        null=True,
-        default=None
-    )
-
-    def __str__(self):
-        return self.name
+    # rating = models.IntegerField(
+    #     verbose_name='Рейтинг',
+    #     null=True,
+    #     default=None
+    # )    
 
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
-        ordering = ['name']
+        ordering = ('name',)
+    
+    def __str__(self):
+        return self.name
 
 
 class GenreTitle(models.Model):
@@ -133,14 +133,14 @@ class GenreTitle(models.Model):
         Genre,
         verbose_name='Жанр',
         blank=True, null=True,
-        on_delete=models.SET_NULL)
-
-    def __str__(self):
-        return f'{self.title}, жанр - {self.genre}'
+        on_delete=models.SET_NULL)    
 
     class Meta:
         verbose_name = 'Произведение и жанр'
         verbose_name_plural = 'Произведения и жанры'
+    
+    def __str__(self):
+        return f'{self.title}, жанр - {self.genre}'
 
 
 class Review(models.Model):
