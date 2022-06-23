@@ -8,3 +8,4 @@ pytest-pythonpath==0.7.3
 djangorestframework-simplejwt==4.7.1
 django-filter
 python-dotenv==0.19.0
+pandas

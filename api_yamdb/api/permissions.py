@@ -1,16 +1,6 @@
 from rest_framework import permissions
 
 
-class IsAdministratorRole(permissions.BasePermission):
-    """Настройка прав доступа на уровне всего запроса"""
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.is_admin
-            or request.user.is_superuser
-        )
-
-
 class IsAuthorAdminModeratorOrReadOnly(permissions.BasePermission):
     """Позволяет предоставлять разные уровни доступа.
     Разным пользователям в зависимости от их свойств, позволяются
@@ -22,16 +12,15 @@ class IsAuthorAdminModeratorOrReadOnly(permissions.BasePermission):
     созданного объекта.
     """
     def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return request.user.is_authenticated
+        return (request.method in permissions.SAFE_METHODS
+                or request.user.is_authenticated)
 
     def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return (obj.author == request.user
+        return (request.method in permissions.SAFE_METHODS
+                or obj.author == request.user
                 or request.user.is_admin
-                or request.user.is_moderator)
+                or request.user.is_moderator
+                )
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -43,6 +32,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     только чтение.
     """
     def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return request.user.is_authenticated and request.user.is_admin
+        return (request.method in permissions.SAFE_METHODS
+                or (request.user.is_authenticated
+                    and request.user.is_admin)
+                )
