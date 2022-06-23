@@ -3,21 +3,16 @@ import uuid
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.db.models import Avg
-from rest_framework import viewsets, filters, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import viewsets, filters
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from reviews.models import Category, Genre, Review, Title, User, Comment
+from reviews.models import Category, Genre, Review, Title, Comment
 from .mixins import ListCreateDestroyViewSet
 from .filters import TitlesFilter
 from .permissions import (
     IsAuthorAdminModeratorOrReadOnly,
-    IsAdministratorRole,
     IsAdminOrReadOnly
 )
 from .serializers import (
@@ -25,8 +20,6 @@ from .serializers import (
     CommentSerializer,
     CredentialsSerializer,
     ReviewSerializer,
-    UserRoleSerializer,
-    UserSerializer,
     CategorySerializer,
     GenreSerializer,
     TitleSerializer,
@@ -34,16 +27,13 @@ from .serializers import (
 )
 
 
-User = get_user_model()
-
-
 class CategoryViewSet(ListCreateDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
-    lookup_field = "slug"
+    search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class GenreViewSet(ListCreateDestroyViewSet):
@@ -51,38 +41,8 @@ class GenreViewSet(ListCreateDestroyViewSet):
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
-    lookup_field = "slug"
-
-
-class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all().annotate(
-        Avg("reviews__score")
-    ).order_by("name")
-    serializer_class = TitleSerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = TitlesFilter
-
-    def get_serializer_class(self):
-        if self.action in ("retrieve", "list"):
-            return ReadOnlyTitleSerializer
-        return TitleSerializer
-
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    """Обработка выдачи токенов."""
-    permission_classes = [AllowAny]
-    serializer_class = CustomTokenObtainPairSerializer
-
-
-class UsersViewSet(viewsets.ModelViewSet):
-    lookup_field = 'username'
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('=username',)
-    permission_classes = (IsAdministratorRole,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
 
     @action(
         detail=False, methods=['PATCH', 'GET'], url_path='me',
@@ -97,33 +57,28 @@ class UsersViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all().annotate(
+        Avg('reviews__score')
+    ).order_by('name')
+    serializer_class = TitleSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TitlesFilter
 
-class RegisterUserViewSet(viewsets.ModelViewSet):
-    """Обработка принимает на вход параметры POST запросом:
-    email и username, генерирует verification_code,
-    создает пользователя и отправляет
-    код по указанной в параметре почте.
+    def get_serializer_class(self):
+        if self.action in ('retrieve', 'list'):
+            return ReadOnlyTitleSerializer
+        return TitleSerializer
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Обработка выдачи токенов. Принимает набор учетных данных
+    пользователя и возвращает пару веб-токенов для подтверждения
+    аутентификации этих учетных данных.
     """
-    queryset = User.objects.all()
-    serializer_class = CredentialsSerializer
-    permission_classes = ()
-    authentication_classes = ()
-
-    def create(self, request):
-        serializer = CredentialsSerializer(data=request.data)
-        if serializer.is_valid():
-            confirmation_code = uuid.uuid4()
-            serializer.save(confirmation_code=confirmation_code)
-            mail_text = f'Код подтверждения {confirmation_code}'
-            mail_theme = 'Код подтверждения'
-            mail_from = settings.MAIL_FROM
-            mail_to = serializer.data['email']
-            send_mail(
-                mail_theme, mail_text, mail_from, [mail_to],
-                fail_silently=False
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    permission_classes = [AllowAny]
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -173,9 +128,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
     def get_review(self):
-        return get_object_or_404(Review,
-                                 pk=self.kwargs.get('review_id'),
-                                 title=self.kwargs.get('title_id'))
+        return get_object_or_404(Review, pk=self.kwargs.get('review_id'))
 
     def get_queryset(self):
         return Comment.objects.filter(review=self.get_review())
