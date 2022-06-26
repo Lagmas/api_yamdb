@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from reviews.models import Category, Genre, Review, Title, Comment
 from .mixins import ListCreateDestroyViewSet
-from .filters import TitlesFilter
+from reviews.filters import TitlesFilter
 from .permissions import (
     IsAuthorAdminModeratorOrReadOnly,
     IsAdminOrReadOnly
@@ -24,6 +24,9 @@ from .serializers import (
 
 
 class CategoryViewSet(ListCreateDestroyViewSet):
+    """
+    Получить список всех категорий.
+    """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -33,6 +36,9 @@ class CategoryViewSet(ListCreateDestroyViewSet):
 
 
 class GenreViewSet(ListCreateDestroyViewSet):
+    """
+    Получить список всех жанров.
+    """
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -42,12 +48,15 @@ class GenreViewSet(ListCreateDestroyViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """
+    Получить список всех объектов.
+    """
     queryset = Title.objects.all().annotate(
         Avg('reviews__score')
-    ).order_by('name')
+    )
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = TitlesFilter
 
     def get_serializer_class(self):

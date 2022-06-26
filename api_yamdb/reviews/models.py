@@ -1,14 +1,16 @@
-from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from users.models import User
 from .validators import validate_year
 
 
-User = get_user_model()
-
-
 class Category(models.Model):
+    """Модель Category, в которой хранятся данные об категорях.
+    Содержит поля:
+    - name - Название категории,
+    - slug - Адрес
+    """
     name = models.CharField(
         verbose_name='Название',
         max_length=200
@@ -22,13 +24,18 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
 
 
 class Genre(models.Model):
+    """Модель Genre, в которой хранятся данные жанра.
+    Содержит поля:
+    - name - Название жанра,
+    - slug - Идентификатор
+    """
     name = models.CharField(
         verbose_name='Название',
         max_length=256
@@ -42,24 +49,31 @@ class Genre(models.Model):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
 
 
 class Title(models.Model):
+    """Модель Title, в которой хранятся данные произведения.
+    Содержит поля:
+    - name - Название произведения,
+    - year - Дата выхода,
+    - description - Описание произведения,
+    - genre - Жанр,
+    - category - Категория
+    """
     name = models.CharField(
         verbose_name='Название',
         max_length=200
     )
-    year = models.IntegerField(
+    year = models.PositiveSmallIntegerField(
         verbose_name='Дата выхода',
         validators=[validate_year]
     )
     description = models.TextField(
         verbose_name='Описание',
-        null=True,
         blank=True
     )
     genre = models.ManyToManyField(
@@ -75,19 +89,13 @@ class Title(models.Model):
         null=True
     )
 
-    rating = models.IntegerField(
-        verbose_name='Рейтинг',
-        null=True,
-        default=None
-    )
-
-    def __str__(self):
-        return self.name
-
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
-        ordering = ['name']
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
 
 
 class GenreTitle(models.Model):
@@ -102,12 +110,12 @@ class GenreTitle(models.Model):
         blank=True, null=True,
         on_delete=models.SET_NULL)
 
-    def __str__(self):
-        return f'{self.title}, жанр - {self.genre}'
-
     class Meta:
         verbose_name = 'Произведение и жанр'
         verbose_name_plural = 'Произведения и жанры'
+
+    def __str__(self):
+        return f'{self.title}, жанр - {self.genre}'
 
 
 class Review(models.Model):

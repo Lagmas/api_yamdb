@@ -29,6 +29,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Категории, описание."""
 
     class Meta:
         model = Category
@@ -40,6 +41,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    """Жанры, описание."""
 
     class Meta:
         model = Genre
@@ -51,6 +53,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    """Основной метод записи информации."""
     genre = serializers.SlugRelatedField(
         slug_field='slug', many=True, queryset=Genre.objects.all()
     )
