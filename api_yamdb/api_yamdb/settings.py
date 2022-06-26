@@ -122,4 +122,3 @@ SIMPLE_JWT = {
 }
 
 MAIL_FROM = 'from@example.com'
-ENV PIP_ROOT_USER_ACTION=ignore
