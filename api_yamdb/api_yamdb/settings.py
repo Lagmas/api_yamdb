@@ -124,3 +124,15 @@ SIMPLE_JWT = {
 }
 
 MAIL_FROM = 'from@example.com'
+
+CSV_DIR = os.path.join(BASE_DIR, 'static/data/')
+
+DICT_TABLE = {
+    'genre.csv': 'reviews_genre',
+    'category.csv': 'reviews_category',
+    'comments.csv': 'reviews_comment',
+    'genre_title.csv': 'reviews_genretitle',
+    'review.csv': 'reviews_review',
+    'titles.csv': 'reviews_title',
+    'users.csv': 'reviews_user'
+}
